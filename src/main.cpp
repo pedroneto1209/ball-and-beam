@@ -39,11 +39,12 @@ float alpha = 0.1; // Fator de suavização para a leitura da distância
 float beta = 0.1;  // Fator de suavização para a saída do PID
 float filteredDistance = 0.0;
 float filteredAngle = 113.0;
+float filteredDerivative = 0.0;
 
 // PID
-float kp = 0.72;
-float ki = 0.1;
-float kd = 0.69;
+float kp = 0.7;
+float ki = 0.04;
+float kd = 0.6;
 float integral_sum = 0.0;
 float error_before = 0.0;
 
@@ -51,7 +52,12 @@ float pid(float error) {
     float dt = 0.01;
     float p = kp * error;
     integral_sum += ki * error * dt;
-    float d = (error - error_before) * kd / dt;
+
+    // Calcula o erro derivativo filtrado
+    float derivative = (error - error_before) / dt;
+    filteredDerivative = 0.1 * derivative + 0.9 * filteredDerivative;
+
+    float d = kd * filteredDerivative;
     float pid_value = p + integral_sum + d;
     error_before = error;
     return pid_value;
@@ -108,7 +114,7 @@ void loop() {
     // Aplicando o filtro passa-baixa na leitura da distância
     filteredDistance = alpha * distance_raw + (1 - alpha) * filteredDistance;
 
-    float error = setpoint - filteredDistance;
+    float error = filteredDistance - setpoint;
 
     float pid_output = pid(error);
 
